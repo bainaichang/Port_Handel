@@ -27,19 +27,19 @@ def receiveBackplaneFirmwareInformation(ser: Serial):
         print('背板固件信息错误 数据头不是0x55 0x55!')
         return None
     length = ser.read(1)[0]
-    data = ser.read(length - 3)  # data表示从功能码开始的数据数组
-    if hex(data[-1]) != '0x16':
-        print('数据结尾不是0x16!\n数据:', data)
+    functionCode = ser.read(1)[0]
+    versionStr = ser.read(4).decode('utf-8')
+    RXTX_Len = ser.read(1)[0]
+    reserved = ser.read(31)
+    if ser.read(1)[0] != 0x16:
+        print('ARM CPU接收MUC的读背板固件信息错误! 数据尾不对')
         return None
-    functionCode = data[0:0]
-    versionStr = data[1:5].decode('utf-8')
-    reserved = data[8:37]
     info = BackplaneFirmwareInformation(length, functionCode, versionStr, bytes([0x1]), reserved)
     return info
 
 
 # ARM CPU发送读模块信息函数
-def sendBackplaneModuleInformation():
+def sendBackplaneModuleInformation() -> bytes:
     return bytes([0x55, 0x55, 0x05, 0x12, 0x16])
 
 
@@ -136,7 +136,7 @@ def receive_diagnosis_info(ser: Serial):
     module_bus_info = ser.read(4)
     module_power_info = ser.read(4)
     module_soft_version_info = ser.read(32)
-    if ser.read(1)[0]!=0x16:
+    if ser.read(1)[0] != 0x16:
         print("MCU 返回诊断信息信息错误: 尾错误")
         return None
-    return DiagnosisInfo(length,module_bus_info,module_power_info,module_soft_version_info)
+    return DiagnosisInfo(length, module_bus_info, module_power_info, module_soft_version_info)
